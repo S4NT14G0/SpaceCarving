@@ -5,68 +5,125 @@ using MathNet.Numerics.LinearAlgebra;
 
 public class SpaceCarver : MonoBehaviour {
 
+    float timeBetweenFrames = 0.5f;
+    float timeSinceLastFrame = 0.0f;
+    int currentFrame = 1;
+    int endFrame = 8;
+    GameObject currentFrameObject;
+
 	// Use this for initialization
 	void Start () {
-        project_loop();
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
 	}
 
-    void project_loop ()
+    // Update is called once per frame
+    void Update()
     {
-        Texture2D image1 = Resources.Load("silhouettes/Silhouette1_0000") as Texture2D;
+        timeSinceLastFrame += Time.deltaTime;
 
-        Matrix<float> p = CameraCalibrations.GetProjMatrix(1);
+        if (timeSinceLastFrame > timeBetweenFrames)
+        {
+            Destroy(currentFrameObject);
+            currentFrameObject = project_loop(currentFrame.ToString("D4"));
 
-        List<float> u = new List<float>();
-        List<float> v = new List<float>();
+            if (currentFrame < endFrame)
+            {
+                currentFrame++;
+            }
+            else
+            {
+                currentFrame = 1;
+            }
 
-        for (float x = -1; x <= 1; x += 0.2f)
+
+            timeSinceLastFrame = 0;
+        }
+    }
+
+
+    GameObject project_loop (string imageFrame)
+    {
+        List<Matrix<float>> cameraCalibrations = CameraCalibrations.GetCamerasProjMatrix();
+
+
+        List<KeyValuePair<Vector3, bool>> voxels = InitializeVoxelDictionary();
+
+        for (int i = 0; i < voxels.Count; i++)
+        {
+            int currentCam = 1;
+
+            foreach (Matrix<float> p in cameraCalibrations)
+            {
+                string imagePath = "silhouettes/Silhouette" + currentCam + "_" + imageFrame;
+                Texture2D currentImage = Resources.Load(imagePath) as Texture2D;
+
+                float[,] xyzCoords = new float[,] { { voxels[i].Key.x }, { voxels[i].Key.y }, { voxels[i].Key.z }, { 1 } };
+
+                Matrix<float> matrixCoords = Matrix<float>.Build.DenseOfArray(xyzCoords);
+
+                Matrix<float> X = p * matrixCoords;
+
+                X.Transpose();
+
+                float uCoord = X[0, 0] / X[2, 0];
+                float vCoord = X[1, 0] / X[2, 0];
+
+                if (!currentImage.GetPixel((int)uCoord, (int)vCoord).Equals(Color.black))
+                {
+                    voxels[i] = new KeyValuePair<Vector3, bool>(voxels[i].Key, true);
+                } 
+                else
+                {
+                    voxels[i] = new KeyValuePair<Vector3, bool>(voxels[i].Key, false);
+                }
+
+                currentCam++;
+
+            }
+        }
+
+        return CreateCloudPoints(voxels);
+    }
+
+    GameObject CreateCloudPoints (List<KeyValuePair<Vector3, bool>> voxels)
+    {
+        GameObject frame = new GameObject();
+        
+        foreach (KeyValuePair<Vector3, bool> voxel in voxels)
+        {
+            if (voxel.Value)
+            {
+                GameObject voxelGameObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                voxelGameObject.GetComponent<Renderer>().material.color = Color.red;
+                voxelGameObject.transform.position = new Vector3(voxel.Key.x, voxel.Key.y, voxel.Key.z);
+                voxelGameObject.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+
+                voxelGameObject.transform.parent = frame.transform;
+            }
+        }
+
+        return frame;
+    }
+
+    List<KeyValuePair< Vector3, bool>> InitializeVoxelDictionary()
+    {
+        List<KeyValuePair<Vector3, bool>> voxels = new List<KeyValuePair<Vector3, bool>>();
+
+        for (float x = -1; x <= 1; x+= 0.2f)
         {
             for (float y = -1; y <= 1; y += 0.2f)
             {
                 for (float z = -1; z <= 1; z += 0.2f)
                 {
-                    float[,] xyzCoords = new float[,] { { x }, { y }, { z }, { 1 } };
-                    Matrix<float> matrixCoords = Matrix<float>.Build.DenseOfArray(xyzCoords);
-
-                    Matrix<float> X = p * matrixCoords;
-
-                    X.Transpose();
-
-                    u.Add(X[0, 0] / X[2, 0]);
-                    v.Add(X[1, 0] / X[2, 0]);
-
+                    Vector3 position = new Vector3(x, y, z);
+                    voxels.Add(new KeyValuePair<Vector3, bool>(position, false));
                 }
             }
         }
 
-        //plotPoints(u, v, image1);
-        //Texture2D plot = pointPlot(u, v);
-        //CreateTargetImage("plot", plot, new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-        CreateVoxels(u, v, image1);
-        CreateTargetImage("img1", image1, new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-        
+        return voxels;
     }
 
-    void CreateVoxels(List<float> u, List<float> v, Texture2D originalTexture)
-    {
-        for (int i = 0; i < u.Count; i++)
-        {
-            if (!originalTexture.GetPixel((int)u[i], (int)v[i]).Equals(Color.black))
-            {
-                GameObject voxel = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                voxel.GetComponent<Renderer>().material.color = Color.red;
-                voxel.transform.position = new Vector3(u[i] / 100, v[i] /100);
-            }
-        }
-
-    }
-
-    void plotPoints (List<float> u, List<float> v, Texture2D originalTexture)
+    void PlotPoints (List<float> u, List<float> v, Texture2D originalTexture)
     {
         Debug.Log(Color.black);
         for (int i = 0; i < u.Count; i++)
@@ -79,31 +136,6 @@ public class SpaceCarver : MonoBehaviour {
 
         originalTexture.Apply();
     }
-
-    Texture2D pointPlot (List<float> u, List<float> v)
-    {
-        Texture2D plot = new Texture2D(2048, 1028);
-
-        for (int i = 0; i < plot.width; i++)
-        {
-            for (int j = 0; j < plot.height; j++)
-            {
-                plot.SetPixel(i, j, Color.clear);
-            }
-        }
-
-        for (int i = 0; i < u.Count; i++)
-        {
-            plot.SetPixel((int)u[i], (int)v[i], Color.red);
-        }
-
-        plot.Apply();
-
-        return plot;
-    }
-
-
-
 
     /// <summary>
     /// Create a new 2D gameobject
