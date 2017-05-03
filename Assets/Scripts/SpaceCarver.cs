@@ -5,15 +5,18 @@ using MathNet.Numerics.LinearAlgebra;
 
 public class SpaceCarver : MonoBehaviour {
 
-    float timeBetweenFrames = 0.5f;
+    float timeBetweenFrames = 0.1f;
     float timeSinceLastFrame = 0.0f;
-    int currentFrame = 1;
-    int endFrame = 8;
+    int currentFrame = 0;
+    int endFrame = 174;
     GameObject currentFrameObject;
 
 	// Use this for initialization
 	void Start () {
-	}
+        //DebugCameraLocations();
+        //TestCoordOnImage();
+
+    }
 
     // Update is called once per frame
     void Update()
@@ -31,7 +34,7 @@ public class SpaceCarver : MonoBehaviour {
             }
             else
             {
-                currentFrame = 1;
+                currentFrame = 0;
             }
 
 
@@ -39,12 +42,28 @@ public class SpaceCarver : MonoBehaviour {
         }
     }
 
+    void DebugCameraLocations()
+    {
+        float[,] zeroPos = new float[,] { { 0 }, { 0 }, { 0 }, { 1 } };
+        Matrix<float> zero = Matrix<float>.Build.DenseOfArray(zeroPos);
+
+        List<Matrix<float>> cameras = CameraCalibrations.GetCamerasProjMatrix();
+
+        foreach (Matrix<float> camera in cameras)
+        {
+            Matrix<float> X = camera * zero;
+            X.Transpose();
+            float uCoord = X[0, 0] / X[2, 0];
+            float vCoord = X[1, 0] / X[2, 0];
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            go.transform.position = new Vector3(uCoord, vCoord, X[2, 0]);
+        }
+    }
 
     GameObject project_loop (string imageFrame)
     {
         List<Matrix<float>> cameraCalibrations = CameraCalibrations.GetCamerasProjMatrix();
-
-
+        //cameraCalibrations.Add(CameraCalibrations.GetProjMatrix(2));
         List<KeyValuePair<Vector3, bool>> voxels = InitializeVoxelDictionary();
 
         for (int i = 0; i < voxels.Count; i++)
@@ -60,28 +79,59 @@ public class SpaceCarver : MonoBehaviour {
 
                 Matrix<float> matrixCoords = Matrix<float>.Build.DenseOfArray(xyzCoords);
 
+                matrixCoords.Transpose();
+
                 Matrix<float> X = p * matrixCoords;
 
-                X.Transpose();
 
                 float uCoord = X[0, 0] / X[2, 0];
                 float vCoord = X[1, 0] / X[2, 0];
 
-                if (!currentImage.GetPixel((int)uCoord, (int)vCoord).Equals(Color.black))
-                {
-                    voxels[i] = new KeyValuePair<Vector3, bool>(voxels[i].Key, true);
-                } 
-                else
+                if (currentImage.GetPixel((int)uCoord, (int)vCoord).Equals(Color.black))
                 {
                     voxels[i] = new KeyValuePair<Vector3, bool>(voxels[i].Key, false);
-                }
+                } 
 
                 currentCam++;
 
             }
         }
 
-        return CreateCloudPoints(voxels);
+        return CreateCloudPoints(voxels); 
+    }
+
+    void TestCoordOnImage()
+    {
+        List<Matrix<float>> cameraCalibrations = CameraCalibrations.GetCamerasProjMatrix();
+        string imagePath = "silhouettes/Silhouette1_0000";
+        Texture2D currentImage = Resources.Load(imagePath) as Texture2D;
+        Matrix<float> P = CameraCalibrations.GetProjMatrix(1);
+        List<float> u = new List<float>();
+        List<float> v = new List<float>();
+
+        for (float x = -1; x <= 1; x += 0.1f)
+        {
+            for (float y = -1; y <= 1; y += 0.1f)
+            {
+                for (float z = -1; z <= 1; z += 0.1f)
+                {
+                    float[,] xyzCoords = new float[,] { { x }, { y }, { z }, { 1 } };
+
+                    Matrix<float> matrixCoords = Matrix<float>.Build.DenseOfArray(xyzCoords);
+
+                    matrixCoords.Transpose();
+
+                    Matrix<float> X = P * matrixCoords;
+
+                    u.Add(X[0, 0] / X[2, 0]);
+                    v.Add(X[1, 0] / X[2, 0]);
+
+                }
+            }
+        }
+
+        PlotPoints(u, v, currentImage);
+        CreateTargetImage("img1", currentImage, new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     }
 
     GameObject CreateCloudPoints (List<KeyValuePair<Vector3, bool>> voxels)
@@ -108,14 +158,14 @@ public class SpaceCarver : MonoBehaviour {
     {
         List<KeyValuePair<Vector3, bool>> voxels = new List<KeyValuePair<Vector3, bool>>();
 
-        for (float x = -1; x <= 1; x+= 0.2f)
+        for (float x = -1; x <= 1; x+= 0.1f)
         {
-            for (float y = -1; y <= 1; y += 0.2f)
+            for (float y = -1; y <= 1; y += 0.1f)
             {
-                for (float z = -1; z <= 1; z += 0.2f)
+                for (float z = -1; z <= 1; z += 0.1f)
                 {
                     Vector3 position = new Vector3(x, y, z);
-                    voxels.Add(new KeyValuePair<Vector3, bool>(position, false));
+                    voxels.Add(new KeyValuePair<Vector3, bool>(position, true));
                 }
             }
         }
