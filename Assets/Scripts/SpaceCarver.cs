@@ -80,7 +80,7 @@ public class SpaceCarver : MonoBehaviour {
 
 
                     float uCoord = currentImage.width - X[0, 0] / X[2, 0];
-                    float vCoord = currentImage.height - (X[1, 0] / X[2, 0]) + 300f;
+                    float vCoord = currentImage.height - (X[1, 0] / X[2, 0]) + 250;
 
                     if (currentImage.GetPixel(Mathf.RoundToInt(uCoord), Mathf.RoundToInt(vCoord)).Equals(Color.black))
                     {
@@ -101,7 +101,7 @@ public class SpaceCarver : MonoBehaviour {
     void TestCoordOnImage()
     {
         List<Matrix<float>> cameraCalibrations = CameraCalibrations.GetCamerasProjMatrix();
-        string imagePath = "silhouettes/Silhouette1_0000";
+        string imagePath = "silhouettes/Silhouette2_0000";
         Texture2D currentImage = Resources.Load(imagePath) as Texture2D;
         Matrix<float> P = CameraCalibrations.GetProjMatrix(1);
         List<float> u = new List<float>();
@@ -109,11 +109,11 @@ public class SpaceCarver : MonoBehaviour {
 
         List<Vector2> uvCoords = new List<Vector2>();
 
-        for (float x = -1; x <= 1; x += 0.1f)
+        for (float x = -1f; x <= 1f; x += 0.1f)
         {
-            for (float y = -1; y <= 1; y += 0.1f)
+            for (float y = -1f; y <= 1f; y += 0.1f)
             {
-                for (float z = -1; z <= 1; z += 0.1f)
+                for (float z = -1f; z <= 1f; z += 0.1f)
                 {
                     float[,] xyzCoords = new float[,] { { x }, { y }, { z }, { 1 } };
 
@@ -124,16 +124,14 @@ public class SpaceCarver : MonoBehaviour {
                     Matrix<float> X = P * matrixCoords;
 
 
-                    uvCoords.Add(new Vector2(currentImage.width - (X[0, 0] / X[2, 0]), currentImage.height - (X[1, 0] / X[2, 0])));
-                    u.Add(currentImage.width - (X[0, 0] / X[2, 0]));
-                    v.Add(currentImage.height - (X[1, 0] / X[2, 0]) + 300);
-
+                    uvCoords.Add(new Vector2(X[0, 0] / X[2, 0],  X[1, 0] / X[2, 0]));
                 }
             }
         }
 
-        //PlotPoints(u, v, currentImage);
         PlotPoints(uvCoords, currentImage);
+        PlotPoints(uvCoords);
+        
         CreateTargetImage("img1", currentImage, new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     }
 
@@ -175,9 +173,21 @@ public class SpaceCarver : MonoBehaviour {
         return voxels;
     }
 
+    void PlotPoints(List<Vector2> uvCoords)
+    {
+        GameObject parent = new GameObject();
+        for (int i = 0; i < uvCoords.Count; i++)
+        {
+            //originalTexture.SetPixel((int)uvCoords[i].x, (int)uvCoords[i].y, Color.red);
+            GameObject point = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            point.transform.position = new Vector3(uvCoords[i].x, uvCoords[i].y, 0.0f);
+            point.transform.parent = parent.transform;
+        }
+
+    }
+
     void PlotPoints (List<float> u, List<float> v, Texture2D originalTexture)
     {
-        Debug.Log(Color.black);
         for (int i = 0; i < u.Count; i++)
         {
             originalTexture.SetPixel((int)u[i], (int)v[i], Color.red);
@@ -185,9 +195,9 @@ public class SpaceCarver : MonoBehaviour {
 
         originalTexture.Apply();
     }
+
     void PlotPoints(List<Vector2> uvCoords, Texture2D originalTexture)
     {
-        Debug.Log(Color.black);
         for (int i = 0; i < uvCoords.Count; i++)
         {
             originalTexture.SetPixel((int) uvCoords[i].x, (int)uvCoords[i].y, Color.red);
