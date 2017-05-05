@@ -5,54 +5,66 @@ using MathNet.Numerics.LinearAlgebra;
 
 public class SpaceCarver : MonoBehaviour {
 
-    float timeBetweenFrames = 0.1f;
+    public float timeBetweenFrames = 0.1f;
     float timeSinceLastFrame = 0.0f;
-    int startFrame = 0;
-    int endFrame = 100;
+    public int startFrame = 0;
+    public int endFrame = 100;
+    public bool debug = false;
     int currentFrame;
     GameObject currentFrameObject;
 
     List<GameObject> frames;
 	// Use this for initialization
 	void Start () {
-
-        //frames = new List<GameObject>();
-        //currentFrame = 0;
-        //for (int i = startFrame; i <= endFrame; i++)
-        //{
-        //    List<KeyValuePair<Vector3, bool>> voxelModel = project_loop(i.ToString("D4"));
-
-        //    frames.Add(CreateCloudPoints(voxelModel));
-        //}
-        //currentFrameObject = frames[currentFrame];
-
-        TestCoordOnImage();
+        if (!debug)
+            GenerateFrames();
+        else
+            PlotUVProjectionOnImage();
     }
 
     // Update is called once per frame
     void Update()
     {
-        //timeSinceLastFrame += Time.deltaTime;
+        timeSinceLastFrame += Time.deltaTime;
 
-        //if (timeSinceLastFrame > timeBetweenFrames)
-        //{
-        //    currentFrameObject.SetActive(false);
-        //    currentFrameObject = frames[currentFrame];
-        //    currentFrameObject.SetActive(true);
+        if (timeSinceLastFrame > timeBetweenFrames)
+        {
 
-        //    if (currentFrame < endFrame - startFrame)
-        //    {
-        //        currentFrame++;
-        //    }
-        //    else
-        //    {
-        //        currentFrame = 0;
-        //    }
+            if (!debug)
+            {
+                currentFrameObject.SetActive(false);
+                currentFrameObject = frames[currentFrame];
+                currentFrameObject.SetActive(true);
+
+                if (currentFrame < endFrame - startFrame)
+                {
+                    currentFrame++;
+                }
+                else
+                {
+                    currentFrame = 0;
+                }
+
+            }
 
 
-        //    timeSinceLastFrame = 0;
-        //}
+            timeSinceLastFrame = 0;
+        }
     }
+
+    void GenerateFrames ()
+    {
+        frames = new List<GameObject>();
+        currentFrame = 0;
+        for (int i = startFrame; i <= endFrame; i++)
+        {
+            List<KeyValuePair<Vector3, bool>> voxelModel = project_loop(i.ToString("D4"));
+
+            frames.Add(CreateCloudPoints(voxelModel));
+        }
+        currentFrameObject = frames[currentFrame];
+    }
+
 
     List<KeyValuePair<Vector3, bool>> project_loop (string imageFrame)
     {
@@ -63,11 +75,11 @@ public class SpaceCarver : MonoBehaviour {
         {
             if (voxels[i].Value)
             {
-                int currentCam = 1;
 
-                foreach (Matrix<float> p in cameraCalibrations)
+                for (int j = 0; j < cameraCalibrations.Count; j++)
                 {
-                    string imagePath = "silhouettes/Silhouette" + currentCam + "_" + imageFrame;
+                    int cam = j + 1;
+                    string imagePath = "silhouettes/Silhouette" + cam + "_" + imageFrame;
                     Texture2D currentImage = Resources.Load(imagePath) as Texture2D;
 
                     float[,] xyzCoords = new float[,] { { voxels[i].Key.x }, { voxels[i].Key.y }, { voxels[i].Key.z }, { 1 } };
@@ -76,20 +88,17 @@ public class SpaceCarver : MonoBehaviour {
 
                     matrixCoords.Transpose();
 
-                    Matrix<float> X = p * matrixCoords;
+                    Matrix<float> X = cameraCalibrations[j] * matrixCoords;
 
 
-                    float uCoord = currentImage.width - X[0, 0] / X[2, 0];
-                    float vCoord = currentImage.height - (X[1, 0] / X[2, 0]) + 250;
+                    float uCoord = currentImage.width - X[0, 0] / X[2, 0] ;
+                    float vCoord = currentImage.height - X[1, 0] / X[2, 0] + 300f;
 
                     if (currentImage.GetPixel(Mathf.RoundToInt(uCoord), Mathf.RoundToInt(vCoord)).Equals(Color.black))
                     {
                         voxels[i] = new KeyValuePair<Vector3, bool>(voxels[i].Key, false);
                         break;
                     }
-
-                    currentCam++;
-
                 }
             }
 
@@ -98,12 +107,12 @@ public class SpaceCarver : MonoBehaviour {
         return voxels; 
     }
 
-    void TestCoordOnImage()
+    void PlotUVProjectionOnImage()
     {
         List<Matrix<float>> cameraCalibrations = CameraCalibrations.GetCamerasProjMatrix();
-        string imagePath = "silhouettes/Silhouette2_0000";
+        string imagePath = "silhouettes/Silhouette3_0000";
         Texture2D currentImage = Resources.Load(imagePath) as Texture2D;
-        Matrix<float> P = CameraCalibrations.GetProjMatrix(1);
+        Matrix<float> P = CameraCalibrations.GetProjMatrix(3);
         List<float> u = new List<float>();
         List<float> v = new List<float>();
 
@@ -119,18 +128,18 @@ public class SpaceCarver : MonoBehaviour {
 
                     Matrix<float> matrixCoords = Matrix<float>.Build.DenseOfArray(xyzCoords);
 
-                    matrixCoords.Transpose();
+                   // matrixCoords.Transpose();
 
                     Matrix<float> X = P * matrixCoords;
 
 
-                    uvCoords.Add(new Vector2(X[0, 0] / X[2, 0],  X[1, 0] / X[2, 0]));
+                    uvCoords.Add(new Vector2((X[0, 0] / X[2, 0]), ( X[1, 0] / X[2, 0])));
                 }
             }
         }
 
         PlotPoints(uvCoords, currentImage);
-        PlotPoints(uvCoords);
+        //PlotPoints(uvCoords);
         
         CreateTargetImage("img1", currentImage, new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     }
