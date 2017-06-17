@@ -19,7 +19,17 @@ public class SpaceCarver : MonoBehaviour {
         if (!debug)
             GenerateFrames();
         else
-            PlotUVProjectionOnImage();
+        {
+            PlotUVProjectionOnImage("silhouettes/Silhouette1_0000");
+            PlotUVProjectionOnImage("silhouettes/Silhouette2_0000");
+            PlotUVProjectionOnImage("silhouettes/Silhouette3_0000");
+            PlotUVProjectionOnImage("silhouettes/Silhouette4_0000");
+            PlotUVProjectionOnImage("silhouettes/Silhouette5_0000");
+            PlotUVProjectionOnImage("silhouettes/Silhouette6_0000");
+            PlotUVProjectionOnImage("silhouettes/Silhouette7_0000");
+            PlotUVProjectionOnImage("silhouettes/Silhouette8_0000");
+
+        }
     }
 
     // Update is called once per frame
@@ -107,10 +117,9 @@ public class SpaceCarver : MonoBehaviour {
         return voxels; 
     }
 
-    void PlotUVProjectionOnImage()
+    void PlotUVProjectionOnImage(string imagePath)
     {
         List<Matrix<float>> cameraCalibrations = CameraCalibrations.GetCamerasProjMatrix();
-        string imagePath = "silhouettes/Silhouette3_0000";
         Texture2D currentImage = Resources.Load(imagePath) as Texture2D;
         Matrix<float> P = CameraCalibrations.GetProjMatrix(3);
         List<float> u = new List<float>();
