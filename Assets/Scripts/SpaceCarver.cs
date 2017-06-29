@@ -127,11 +127,11 @@ public class SpaceCarver : MonoBehaviour {
 
         List<Vector2> uvCoords = new List<Vector2>();
 
-        for (float x = -1f; x <= 1f; x += 0.1f)
+        for (float x = -15f; x <= 15f; x += 0.1f)
         {
-            for (float y = -1f; y <= 1f; y += 0.1f)
+            for (float y = -15f; y <= 15f; y += 0.1f)
             {
-                for (float z = -1f; z <= 1f; z += 0.1f)
+                for (float z = -15f; z <= 15f; z += 0.1f)
                 {
                     float[,] xyzCoords = new float[,] { { x }, { y }, { z }, { 1 } };
 

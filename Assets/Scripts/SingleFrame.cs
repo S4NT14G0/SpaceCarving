@@ -24,7 +24,7 @@ public class SingleFrame : MonoBehaviour
             {
                 for (int j = 0; j < cameraCalibrations.Count; j++)
                 {
-                    int cam = 3;
+                    int cam = j + 1;
                     string imagePath = "silhouettes/Silhouette" + cam + "_" + imageFrame;
                     Texture2D currentImage = Resources.Load(imagePath) as Texture2D;
 
@@ -75,11 +75,11 @@ public class SingleFrame : MonoBehaviour
     {
         List<KeyValuePair<Vector3, bool>> voxels = new List<KeyValuePair<Vector3, bool>>();
 
-        for (float x = -1; x <= 1; x += 0.1f)
+        for (float x = -15; x <= 15; x += 0.1f)
         {
-            for (float y = -1; y <= 1; y += 0.1f)
+            for (float y = -15; y <= 15; y += 0.1f)
             {
-                for (float z = -1; z <= 1; z += 0.1f)
+                for (float z = -15; z <= 15; z += 0.1f)
                 {
                     Vector3 position = new Vector3(x, y, z);
                     voxels.Add(new KeyValuePair<Vector3, bool>(position, true));

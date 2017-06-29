@@ -64,7 +64,7 @@ public class CameraCalibrations
     public static List<Matrix<float>> GetCamerasProjMatrix()
     {
         List<Matrix<float>> cameras = new List<Matrix<float>>();
-        for (int i = 1; i <=1; i++)
+        for (int i = 1; i <= 8; i++)
         {
             cameras.Add(GetProjMatrix(i));
         }
