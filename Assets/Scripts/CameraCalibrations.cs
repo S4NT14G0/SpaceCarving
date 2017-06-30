@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 public class CameraCalibrations
 {
-
     static float[,] camera1 = new float[,]
     {
         {1.483215e+03f, -7.953666e+02f, -9.153119e+02f, 4.046004e+03f},
@@ -64,10 +63,19 @@ public class CameraCalibrations
     public static List<Matrix<float>> GetCamerasProjMatrix()
     {
         List<Matrix<float>> cameras = new List<Matrix<float>>();
-        for (int i = 1; i <= 8; i++)
-        {
-            cameras.Add(GetProjMatrix(i));
-        }
+        //for (int i = 1; i <= 8; i++)
+        //{
+        //    cameras.Add(GetProjMatrix(i));
+        //}
+
+        cameras.Add(GetProjMatrix(1));
+        cameras.Add(GetProjMatrix(2));
+        cameras.Add(GetProjMatrix(3));
+        cameras.Add(GetProjMatrix(4));
+        cameras.Add(GetProjMatrix(5));
+        cameras.Add(GetProjMatrix(6));
+        cameras.Add(GetProjMatrix(7));
+        cameras.Add(GetProjMatrix(8));
 
         return cameras;
     }

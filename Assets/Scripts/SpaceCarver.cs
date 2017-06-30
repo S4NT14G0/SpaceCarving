@@ -20,14 +20,14 @@ public class SpaceCarver : MonoBehaviour {
             GenerateFrames();
         else
         {
-            PlotUVProjectionOnImage("silhouettes/Silhouette1_0000");
-            PlotUVProjectionOnImage("silhouettes/Silhouette2_0000");
-            PlotUVProjectionOnImage("silhouettes/Silhouette3_0000");
-            PlotUVProjectionOnImage("silhouettes/Silhouette4_0000");
-            PlotUVProjectionOnImage("silhouettes/Silhouette5_0000");
-            PlotUVProjectionOnImage("silhouettes/Silhouette6_0000");
-            PlotUVProjectionOnImage("silhouettes/Silhouette7_0000");
-            PlotUVProjectionOnImage("silhouettes/Silhouette8_0000");
+            PlotUVProjectionOnImage("silhouettes/Silhouette1_0000", 1);
+            PlotUVProjectionOnImage("silhouettes/Silhouette2_0000", 2);
+            PlotUVProjectionOnImage("silhouettes/Silhouette3_0000", 3);
+            PlotUVProjectionOnImage("silhouettes/Silhouette4_0000", 4);
+            PlotUVProjectionOnImage("silhouettes/Silhouette5_0000", 5);
+            PlotUVProjectionOnImage("silhouettes/Silhouette6_0000", 6);
+            PlotUVProjectionOnImage("silhouettes/Silhouette7_0000", 7);
+            PlotUVProjectionOnImage("silhouettes/Silhouette8_0000", 8);
 
         }
     }
@@ -117,32 +117,33 @@ public class SpaceCarver : MonoBehaviour {
         return voxels; 
     }
 
-    void PlotUVProjectionOnImage(string imagePath)
+    void PlotUVProjectionOnImage(string imagePath, int cameraProjectionMatrix)
     {
-        List<Matrix<float>> cameraCalibrations = CameraCalibrations.GetCamerasProjMatrix();
         Texture2D currentImage = Resources.Load(imagePath) as Texture2D;
-        Matrix<float> P = CameraCalibrations.GetProjMatrix(3);
+        Matrix<float> P = CameraCalibrations.GetProjMatrix(cameraProjectionMatrix);
         List<float> u = new List<float>();
         List<float> v = new List<float>();
 
         List<Vector2> uvCoords = new List<Vector2>();
 
-        for (float x = -15f; x <= 15f; x += 0.1f)
+        for (float x = -5f; x <= 5f; x += 0.2f)
         {
-            for (float y = -15f; y <= 15f; y += 0.1f)
+            for (float y = -5f; y <= 5f; y += 0.2f)
             {
-                for (float z = -15f; z <= 15f; z += 0.1f)
+                for (float z = -5f; z <= 5f; z += 0.2f)
                 {
                     float[,] xyzCoords = new float[,] { { x }, { y }, { z }, { 1 } };
 
                     Matrix<float> matrixCoords = Matrix<float>.Build.DenseOfArray(xyzCoords);
 
-                   // matrixCoords.Transpose();
+                   matrixCoords.Transpose();
 
                     Matrix<float> X = P * matrixCoords;
 
+                    Vector2 uv = new Vector2((X[0, 0] / X[2, 0]), (X[1, 0] / X[2, 0]));
 
-                    uvCoords.Add(new Vector2((X[0, 0] / X[2, 0]), ( X[1, 0] / X[2, 0])));
+                    if (!currentImage.GetPixel(Mathf.RoundToInt(uv.x), Mathf.RoundToInt(uv.y)).Equals(Color.black))
+                        uvCoords.Add(uv);
                 }
             }
         }
